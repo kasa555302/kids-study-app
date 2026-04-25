@@ -2,12 +2,12 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout}">
-<head><title>しゅくだい</title></head>
+<head><title>かだい</title></head>
 <body>
 <div layout:fragment="content">
 
   <div class="page-header rainbow-bg">
-    <h2>📝 しゅくだいチェックリスト</h2>
+    <h2>📝 かだいチェックリスト</h2>
   </div>
 
   <div class="homework-list">
@@ -29,15 +29,37 @@
         <button type="submit" class="btn-icon-del">🗑</button>
       </form>
     </div>
-    <p th:if="${#lists.isEmpty(homeworks)}" class="empty-msg">しゅくだいはないよ！🎉</p>
+    <p th:if="${#lists.isEmpty(homeworks)}" class="empty-msg">かだいはないよ！🎉</p>
   </div>
 
   <div class="card form-card">
-    <h3>➕ しゅくだいを追加する</h3>
+    <h3>➕ かだいを追加する</h3>
     <form th:action="@{/homework/add}" th:object="${newHomework}" method="post" class="form-col">
-      <input type="text" th:field="*{subject}" class="input-field" placeholder="かもく（例: さんすう）" required>
-      <input type="text" th:field="*{content}" class="input-field" placeholder="しゅくだいの内容" required>
-      <input type="date" th:field="*{dueDate}" class="input-field" required>
+      <div class="form-row">
+        <label class="label-big" for="subject">かもく：</label>
+        <select th:field="*{subject}" id="subject" class="input-field select-field" required>
+          <option value="">えらんでね</option>
+          <option value="こくご">こくご</option>
+          <option value="さんすう">さんすう</option>
+          <option value="りか">りか</option>
+          <option value="しゃかい">しゃかい</option>
+          <option value="えいご">えいご</option>
+          <option value="おんがく">おんがく</option>
+          <option value="ずこう">ずこう</option>
+          <option value="たいいく">たいいく</option>
+          <option value="どうとく">どうとく</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="label-big" for="content">ないよう：</label>
+        <input type="text" th:field="*{content}" id="content" class="input-field"
+               placeholder="かだいのないよう（例: ドリル P.12〜15）" required style="flex:1;">
+      </div>
+      <div class="form-row">
+        <label class="label-big" for="dueDate">しめきり：</label>
+        <input type="date" th:field="*{dueDate}" id="dueDate" class="input-field" required>
+      </div>
       <button type="submit" class="btn btn-round btn-add">追加する！</button>
     </form>
   </div>
