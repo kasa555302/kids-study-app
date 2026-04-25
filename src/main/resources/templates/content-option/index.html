@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title>ないよう選択肢の管理</title></head>
+<body>
+<div layout:fragment="content">
+
+  <div class="page-header rainbow-bg">
+    <h2>⚙ ないようの選択肢を管理する</h2>
+    <a th:href="@{/homework}" class="btn btn-round btn-back" style="margin-top:.5rem; font-size:.9rem;">
+      ◀ かだい画面にもどる
+    </a>
+  </div>
+
+  <!-- 選択肢一覧 -->
+  <div class="card">
+    <h3 style="margin-bottom:.9rem;">いまの選択肢</h3>
+    <p th:if="${#lists.isEmpty(options)}" class="empty-msg">まだ選択肢がないよ。下のフォームで追加してね！</p>
+
+    <div th:each="opt : ${options}" class="option-row">
+      <!-- 通常表示 -->
+      <div th:if="${editOption == null or editOption.id != opt.id}" class="option-view">
+        <span class="option-label" th:text="${opt.label}"></span>
+        <div class="option-actions">
+          <a th:href="@{/content-options/edit/{id}(id=${opt.id})}"
+             class="btn btn-round btn-edit-sm">✏ 編集</a>
+          <form th:action="@{/content-options/delete/{id}(id=${opt.id})}" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-round btn-del-sm"
+                    onclick="return confirm('削除してもいい？')">🗑 削除</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- 編集フォーム（その行だけ展開） -->
+      <form th:if="${editOption != null and editOption.id == opt.id}"
+            th:action="@{/content-options/edit/{id}(id=${opt.id})}"
+            method="post" class="option-edit-form">
+        <input type="text" name="label" th:value="${editOption.label}"
+               class="input-field" required style="flex:1;">
+        <button type="submit" class="btn btn-round btn-add">保存</button>
+        <a th:href="@{/content-options}" class="btn btn-round btn-cancel">キャンセル</a>
+      </form>
+    </div>
+  </div>
+
+  <!-- 新規追加フォーム -->
+  <div class="card form-card">
+    <h3>➕ 選択肢を追加する</h3>
+    <form th:action="@{/content-options/add}" th:object="${newOption}" method="post" class="form-row">
+      <input type="text" th:field="*{label}" class="input-field"
+             placeholder="例: ドリル・音読・プリント" required style="flex:1;">
+      <button type="submit" class="btn btn-round btn-add">追加する！</button>
+    </form>
+  </div>
+
+</div>
+</body>
+</html>

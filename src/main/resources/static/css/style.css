@@ -305,6 +305,42 @@ body {
 /* ===== 共通 ===== */
 .empty-msg { text-align: center; color: #aaa; padding: 1.5rem; }
 
+/* ===== ないよう選択肢管理 ===== */
+.btn-manage  { background: var(--violet); color: #fff; }
+.btn-back    { background: var(--blue);   color: #fff; }
+.btn-cancel  { background: #aaa;          color: #fff; }
+.btn-edit-sm { background: var(--yellow); color: #555; padding: .3rem .8rem; font-size: .85rem; }
+.btn-del-sm  { background: var(--red);    color: #fff; padding: .3rem .8rem; font-size: .85rem; }
+
+.option-row { border-bottom: 1px solid #eee; padding: .6rem 0; }
+.option-row:last-child { border-bottom: none; }
+
+.option-view {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+}
+.option-label { font-size: 1.05rem; }
+.option-actions { display: flex; gap: .4rem; flex-shrink: 0; }
+
+.option-edit-form {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
+/* ないよう入力（セレクト＋テキスト） */
+.content-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.or-label { color: #aaa; font-size: .9rem; white-space: nowrap; }
+
 /* ===== レスポンシブ ===== */
 @media (max-width: 600px) {
   .timer-display { font-size: 3.5rem; }
