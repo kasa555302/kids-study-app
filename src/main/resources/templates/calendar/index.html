@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title>カレンダー</title></head>
+<body>
+<div layout:fragment="content">
+
+  <div class="page-header rainbow-bg">
+    <h2>📅 月間カレンダー</h2>
+    <div class="month-nav">
+      <a th:href="@{/calendar(year=${yearMonth.minusMonths(1).year}, month=${yearMonth.minusMonths(1).monthValue})}"
+         class="btn btn-round btn-prev">◀ まえの月</a>
+      <span class="current-month" th:text="${yearMonth.year + '年' + yearMonth.monthValue + '月'}"></span>
+      <a th:href="@{/calendar(year=${yearMonth.plusMonths(1).year}, month=${yearMonth.plusMonths(1).monthValue})}"
+         class="btn btn-round btn-next">つぎの月 ▶</a>
+    </div>
+  </div>
+
+  <!-- カレンダーグリッド -->
+  <div class="calendar-grid">
+    <div class="cal-header" th:each="d : ${ {'日','月','火','水','木','金','土'} }" th:text="${d}"></div>
+
+    <!-- 月初の空白 -->
+    <div class="cal-empty"
+         th:each="i : ${#numbers.sequence(1, yearMonth.atDay(1).dayOfWeek.value == 7 ? 0 : yearMonth.atDay(1).dayOfWeek.value)}">
+    </div>
+
+    <!-- 日付セル -->
+    <th:block th:each="day : ${#numbers.sequence(1, yearMonth.lengthOfMonth())}">
+      <div class="cal-cell"
+           th:classappend="${scheduleMap.containsKey(yearMonth.atDay(day))} ? 'has-event' : ''">
+        <span class="cal-day" th:text="${day}"></span>
+        <ul class="cal-events" th:if="${scheduleMap.containsKey(yearMonth.atDay(day))}">
+          <li th:each="s : ${scheduleMap.get(yearMonth.atDay(day))}" class="cal-event-item">
+            <span th:text="${s.title}"></span>
+            <form th:action="@{/calendar/delete/{id}(id=${s.id})}" method="post" style="display:inline">
+              <input type="hidden" name="year"  th:value="${yearMonth.year}">
+              <input type="hidden" name="month" th:value="${yearMonth.monthValue}">
+              <button type="submit" class="btn-icon-del">✕</button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </th:block>
+  </div>
+
+  <!-- 予定追加フォーム -->
+  <div class="card form-card">
+    <h3>➕ よていを追加する</h3>
+    <form th:action="@{/calendar/add}" th:object="${newSchedule}" method="post" class="form-row">
+      <input type="date" th:field="*{scheduleDate}" class="input-field" required>
+      <input type="text" th:field="*{title}" class="input-field" placeholder="よていのなまえ" required>
+      <input type="text" th:field="*{memo}"  class="input-field" placeholder="メモ（なくてもいいよ）">
+      <button type="submit" class="btn btn-round btn-add">追加する！</button>
+    </form>
+  </div>
+
+</div>
+</body>
+</html>

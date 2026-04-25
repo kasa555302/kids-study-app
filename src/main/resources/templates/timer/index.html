@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title>タイマー</title></head>
+<body>
+<div layout:fragment="content">
+
+  <div class="page-header rainbow-bg">
+    <h2>⏱ べんきょうタイマー</h2>
+  </div>
+
+  <div class="card timer-card">
+    <div class="timer-display" id="timerDisplay">00:00</div>
+
+    <div class="form-row" style="justify-content:center; margin-bottom:1rem;">
+      <label class="label-big">かもく：</label>
+      <input type="text" id="subjectInput" class="input-field" placeholder="例: さんすう" style="max-width:200px;">
+    </div>
+
+    <div class="timer-buttons">
+      <button id="startBtn"  class="btn btn-round btn-start"  onclick="startTimer()">▶ スタート</button>
+      <button id="stopBtn"   class="btn btn-round btn-stop"   onclick="stopTimer()"  disabled>⏹ ストップ</button>
+      <button id="resetBtn"  class="btn btn-round btn-reset"  onclick="resetTimer()">🔄 リセット</button>
+    </div>
+
+    <div id="resultMsg" class="result-msg" style="display:none;"></div>
+  </div>
+
+  <div class="card">
+    <h3>📋 べんきょう記録</h3>
+    <table class="record-table" th:if="${!#lists.isEmpty(records)}">
+      <thead>
+        <tr><th>日にち</th><th>かもく</th><th>じかん</th></tr>
+      </thead>
+      <tbody>
+        <tr th:each="r : ${records}">
+          <td th:text="${r.studyDate}"></td>
+          <td th:text="${r.subject}"></td>
+          <td th:text="${r.formattedDuration}"></td>
+        </tr>
+      </tbody>
+    </table>
+    <p th:if="${#lists.isEmpty(records)}" class="empty-msg">まだ記録がないよ。タイマーをつかってみよう！</p>
+  </div>
+
+</div>
+
+<script th:inline="none">
+let seconds = 0;
+let intervalId = null;
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function updateDisplay() {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  document.getElementById('timerDisplay').textContent = pad(m) + ':' + pad(s);
+}
+
+function startTimer() {
+  if (intervalId) return;
+  intervalId = setInterval(() => { seconds++; updateDisplay(); }, 1000);
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('stopBtn').disabled  = false;
+}
+
+function stopTimer() {
+  clearInterval(intervalId);
+  intervalId = null;
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('stopBtn').disabled  = true;
+
+  const subject = document.getElementById('subjectInput').value || '(かもくなし)';
+  fetch('/timer/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `subject=${encodeURIComponent(subject)}&durationSeconds=${seconds}`
+  })
+  .then(r => r.json())
+  .then(data => {
+    const msg = document.getElementById('resultMsg');
+    msg.style.display = 'block';
+    if (data.stampEarned) {
+      msg.innerHTML = `🎉 ${data.formatted} べんきょうしたよ！⭐ スタンプをゲット！`;
+      msg.className = 'result-msg stamp-earned';
+    } else {
+      msg.innerHTML = `✅ ${data.formatted} 記録したよ！`;
+      msg.className = 'result-msg';
+    }
+  });
+}
+
+function resetTimer() {
+  clearInterval(intervalId);
+  intervalId = null;
+  seconds = 0;
+  updateDisplay();
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('stopBtn').disabled  = true;
+  document.getElementById('resultMsg').style.display = 'none';
+}
+</script>
+</body>
+</html>

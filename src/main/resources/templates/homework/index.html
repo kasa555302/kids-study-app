@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title>しゅくだい</title></head>
+<body>
+<div layout:fragment="content">
+
+  <div class="page-header rainbow-bg">
+    <h2>📝 しゅくだいチェックリスト</h2>
+  </div>
+
+  <div class="homework-list">
+    <div th:each="hw : ${homeworks}"
+         class="homework-card"
+         th:classappend="${hw.done} ? 'done' : ''">
+      <div class="hw-left">
+        <form th:action="@{/homework/toggle/{id}(id=${hw.id})}" method="post">
+          <button type="submit" class="check-btn"
+                  th:text="${hw.done} ? '✅' : '⬜'"></button>
+        </form>
+        <div class="hw-info">
+          <span class="hw-subject badge" th:text="${hw.subject}"></span>
+          <span class="hw-content" th:text="${hw.content}"></span>
+          <span class="hw-due" th:text="'しめきり: ' + ${hw.dueDate}"></span>
+        </div>
+      </div>
+      <form th:action="@{/homework/delete/{id}(id=${hw.id})}" method="post">
+        <button type="submit" class="btn-icon-del">🗑</button>
+      </form>
+    </div>
+    <p th:if="${#lists.isEmpty(homeworks)}" class="empty-msg">しゅくだいはないよ！🎉</p>
+  </div>
+
+  <div class="card form-card">
+    <h3>➕ しゅくだいを追加する</h3>
+    <form th:action="@{/homework/add}" th:object="${newHomework}" method="post" class="form-col">
+      <input type="text" th:field="*{subject}" class="input-field" placeholder="かもく（例: さんすう）" required>
+      <input type="text" th:field="*{content}" class="input-field" placeholder="しゅくだいの内容" required>
+      <input type="date" th:field="*{dueDate}" class="input-field" required>
+      <button type="submit" class="btn btn-round btn-add">追加する！</button>
+    </form>
+  </div>
+
+</div>
+</body>
+</html>

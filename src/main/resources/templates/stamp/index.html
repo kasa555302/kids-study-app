@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head><title>スタンプ帳</title></head>
+<body>
+<div layout:fragment="content">
+
+  <div class="page-header rainbow-bg">
+    <h2>⭐ スタンプ帳</h2>
+  </div>
+
+  <div class="stamp-summary card">
+    <p class="stamp-total">ぜんぶで <span th:text="${total}" class="count-big"></span> こ ためたよ！</p>
+    <div th:if="${!#strings.isEmpty(reward)}" class="reward-banner">
+      <p th:text="${reward}"></p>
+    </div>
+    <p th:if="${#strings.isEmpty(reward)}" class="reward-hint">
+      🌟 5こためると ご褒美があるよ！
+    </p>
+  </div>
+
+  <div class="stamp-grid">
+    <div th:each="s : ${stamps}" class="stamp-item">
+      <div class="stamp-emoji" th:text="${s.stampEmoji}"></div>
+      <div class="stamp-reason" th:text="${s.reason}"></div>
+      <div class="stamp-date" th:text="${s.earnedDate}"></div>
+    </div>
+    <p th:if="${#lists.isEmpty(stamps)}" class="empty-msg">
+      まだスタンプがないよ。タイマーで10分以上べんきょうしよう！
+    </p>
+  </div>
+
+</div>
+</body>
+</html>
