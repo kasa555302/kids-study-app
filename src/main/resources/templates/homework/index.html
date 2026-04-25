@@ -41,6 +41,7 @@
     <h3>➕ かだいを追加する</h3>
     <form th:action="@{/homework/add}" th:object="${newHomework}" method="post" class="form-col">
 
+      <!-- かもく -->
       <div class="form-row">
         <label class="label-big" for="subject">かもく：</label>
         <select th:field="*{subject}" id="subject" class="input-field select-field" required>
@@ -55,38 +56,77 @@
         </select>
       </div>
 
-      <div class="form-row">
-        <label class="label-big" for="content">ないよう：</label>
-        <div class="content-input-wrap">
-          <select id="contentSelect" class="input-field select-field"
-                  onchange="syncContent(this)">
-            <option value="">えらぶ</option>
+      <!-- ないよう（ラジオで入力方式を切り替え） -->
+      <div class="form-group">
+        <span class="label-big">ないよう：</span>
+        <div class="content-mode-toggle">
+          <label class="toggle-label">
+            <input type="radio" name="contentMode" value="select" checked onchange="switchContentMode('select')">
+            えらぶ
+          </label>
+          <label class="toggle-label">
+            <input type="radio" name="contentMode" value="type" onchange="switchContentMode('type')">
+            じぶんで入力
+          </label>
+        </div>
+
+        <!-- えらぶ -->
+        <div id="contentSelectWrap">
+          <select id="contentSelect" class="input-field select-field" onchange="applySelectValue(this)">
+            <option value="">えらんでね</option>
             <option th:each="opt : ${contentOptions}"
                     th:value="${opt.label}"
                     th:text="${opt.label}"></option>
           </select>
-          <span class="or-label">または</span>
-          <input type="text" th:field="*{content}" id="content" class="input-field"
-                 placeholder="じぶんで入力" required>
         </div>
+
+        <!-- じぶんで入力 -->
+        <div id="contentTypeWrap" style="display:none;">
+          <input type="text" id="contentTypeInput" class="input-field"
+                 placeholder="ないようをじぶんで入力してね" style="width:100%;">
+        </div>
+
+        <!-- 実際に送信される hidden フィールド -->
+        <input type="hidden" th:field="*{content}" id="contentHidden" required>
       </div>
 
+      <!-- 日付 -->
       <div class="form-row">
         <label class="label-big" for="dueDate">日付：</label>
         <input type="date" th:field="*{dueDate}" id="dueDate" class="input-field" required>
       </div>
 
-      <button type="submit" class="btn btn-round btn-add">追加する！</button>
+      <button type="submit" class="btn btn-round btn-add" onclick="return prepareContent()">追加する！</button>
     </form>
   </div>
 
 </div>
 
 <script th:inline="none">
-function syncContent(select) {
-  if (select.value) {
-    document.getElementById('content').value = select.value;
+let currentMode = 'select';
+
+function switchContentMode(mode) {
+  currentMode = mode;
+  document.getElementById('contentSelectWrap').style.display = (mode === 'select') ? 'block' : 'none';
+  document.getElementById('contentTypeWrap').style.display   = (mode === 'type')   ? 'block' : 'none';
+  document.getElementById('contentHidden').value = '';
+}
+
+function applySelectValue(select) {
+  document.getElementById('contentHidden').value = select.value;
+}
+
+function prepareContent() {
+  if (currentMode === 'select') {
+    const val = document.getElementById('contentSelect').value;
+    if (!val) { alert('ないようをえらんでね！'); return false; }
+    document.getElementById('contentHidden').value = val;
+  } else {
+    const val = document.getElementById('contentTypeInput').value.trim();
+    if (!val) { alert('ないようを入力してね！'); return false; }
+    document.getElementById('contentHidden').value = val;
   }
+  return true;
 }
 </script>
 </body>

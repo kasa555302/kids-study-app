@@ -1,6 +1,8 @@
 package com.kids.studyapp.controller;
 
+import com.kids.studyapp.entity.Homework;
 import com.kids.studyapp.entity.Schedule;
+import com.kids.studyapp.repository.HomeworkRepository;
 import com.kids.studyapp.service.CalendarService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -10,15 +12,18 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/calendar")
 public class CalendarController {
 
     private final CalendarService calendarService;
+    private final HomeworkRepository homeworkRepository;
 
-    public CalendarController(CalendarService calendarService) {
+    public CalendarController(CalendarService calendarService, HomeworkRepository homeworkRepository) {
         this.calendarService = calendarService;
+        this.homeworkRepository = homeworkRepository;
     }
 
     @GetMapping
@@ -28,18 +33,21 @@ public class CalendarController {
         YearMonth ym = (year != null && month != null)
                 ? YearMonth.of(year, month) : YearMonth.now();
 
+        // よてい（Schedule）
         Map<LocalDate, List<Schedule>> scheduleMap = calendarService.getMonthlySchedules(ym);
+
+        // かだい（Homework）を日付でグループ化
+        LocalDate from = ym.atDay(1);
+        LocalDate to   = ym.atEndOfMonth();
+        Map<LocalDate, List<Homework>> homeworkMap = homeworkRepository
+                .findByDueDateBetweenOrderByDueDateAsc(from, to)
+                .stream()
+                .collect(Collectors.groupingBy(Homework::getDueDate));
+
         model.addAttribute("yearMonth", ym);
         model.addAttribute("scheduleMap", scheduleMap);
-        model.addAttribute("newSchedule", new Schedule());
+        model.addAttribute("homeworkMap", homeworkMap);
         return "calendar/index";
-    }
-
-    @PostMapping("/add")
-    public String add(@ModelAttribute Schedule schedule) {
-        calendarService.save(schedule);
-        YearMonth ym = YearMonth.from(schedule.getScheduleDate());
-        return "redirect:/calendar?year=" + ym.getYear() + "&month=" + ym.getMonthValue();
     }
 
     @PostMapping("/edit/{id}")
@@ -54,6 +62,14 @@ public class CalendarController {
     public String delete(@PathVariable Long id,
                          @RequestParam int year, @RequestParam int month) {
         calendarService.delete(id);
+        return "redirect:/calendar?year=" + year + "&month=" + month;
+    }
+
+    /** カレンダー画面からかだいを削除する */
+    @PostMapping("/delete-homework/{id}")
+    public String deleteHomework(@PathVariable Long id,
+                                 @RequestParam int year, @RequestParam int month) {
+        homeworkRepository.deleteById(id);
         return "redirect:/calendar?year=" + year + "&month=" + month;
     }
 }

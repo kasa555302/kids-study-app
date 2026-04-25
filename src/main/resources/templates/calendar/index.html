@@ -17,6 +17,12 @@
     </div>
   </div>
 
+  <!-- 凡例 -->
+  <div class="cal-legend">
+    <span class="legend-badge legend-schedule">📅 よてい</span>
+    <span class="legend-badge legend-homework">📝 かだい</span>
+  </div>
+
   <!-- カレンダーグリッド -->
   <div class="calendar-grid">
     <div class="cal-header" th:each="d : ${ {'日','月','火','水','木','金','土'} }" th:text="${d}"></div>
@@ -29,12 +35,15 @@
     <!-- 日付セル -->
     <th:block th:each="day : ${#numbers.sequence(1, yearMonth.lengthOfMonth())}">
       <div class="cal-cell"
-           th:classappend="${scheduleMap.containsKey(yearMonth.atDay(day))} ? 'has-event' : ''">
+           th:classappend="${(scheduleMap.containsKey(yearMonth.atDay(day)) or homeworkMap.containsKey(yearMonth.atDay(day)))} ? 'has-event' : ''">
         <span class="cal-day" th:text="${day}"></span>
+
+        <!-- よてい -->
         <ul class="cal-events" th:if="${scheduleMap.containsKey(yearMonth.atDay(day))}">
           <li th:each="s : ${scheduleMap.get(yearMonth.atDay(day))}"
-              class="cal-event-item cal-event-clickable"
+              class="cal-event-item cal-event-schedule cal-event-clickable"
               th:data-id="${s.id}"
+              th:data-type="schedule"
               th:data-title="${s.title}"
               th:data-date="${s.scheduleDate}"
               th:data-memo="${s.memo != null ? s.memo : ''}"
@@ -44,31 +53,35 @@
             <span th:text="${s.title}"></span>
           </li>
         </ul>
+
+        <!-- かだい -->
+        <ul class="cal-events" th:if="${homeworkMap.containsKey(yearMonth.atDay(day))}">
+          <li th:each="hw : ${homeworkMap.get(yearMonth.atDay(day))}"
+              class="cal-event-item cal-event-homework cal-event-clickable"
+              th:data-id="${hw.id}"
+              th:data-type="homework"
+              th:data-title="${hw.subject + '：' + hw.content}"
+              th:data-date="${hw.dueDate}"
+              th:data-done="${hw.done}"
+              th:data-year="${yearMonth.year}"
+              th:data-month="${yearMonth.monthValue}"
+              onclick="openModal(this)">
+            <span th:text="${hw.subject + '：' + hw.content}"></span>
+          </li>
+        </ul>
       </div>
     </th:block>
-  </div>
-
-  <!-- 予定追加フォーム -->
-  <div class="card form-card">
-    <h3>➕ よていを追加する</h3>
-    <form th:action="@{/calendar/add}" th:object="${newSchedule}" method="post" class="form-row">
-      <input type="date" th:field="*{scheduleDate}" class="input-field" required>
-      <input type="text" th:field="*{title}" class="input-field" placeholder="よていのなまえ" required>
-      <input type="text" th:field="*{memo}"  class="input-field" placeholder="メモ（なくてもいいよ）">
-      <button type="submit" class="btn btn-round btn-add">追加する！</button>
-    </form>
   </div>
 
   <!-- ===== 詳細モーダル ===== -->
   <div id="scheduleModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
     <div class="modal-box">
 
-      <!-- 閉じるボタン -->
       <button class="modal-close-btn" onclick="closeModal()">✕</button>
 
-      <!-- 表示モード -->
+      <!-- よてい表示モード -->
       <div id="viewMode">
-        <div class="modal-emoji">📅</div>
+        <div class="modal-emoji" id="viewEmoji"></div>
         <h3 class="modal-title" id="viewTitle"></h3>
         <p class="modal-date"><span id="viewDate"></span></p>
         <div class="modal-memo-box" id="viewMemoWrap">
@@ -76,19 +89,21 @@
           <p class="modal-memo-text" id="viewMemo"></p>
         </div>
         <p id="viewNoMemo" class="modal-no-memo" style="display:none;">メモはないよ</p>
+        <div id="viewDoneStatus" class="modal-done-badge" style="display:none;"></div>
 
         <div class="modal-actions">
-          <button class="btn btn-round btn-edit-modal" onclick="switchToEdit()">✏ 編集する</button>
+          <!-- よていのみ編集ボタンを表示 -->
+          <button id="editBtn" class="btn btn-round btn-edit-modal" onclick="switchToEdit()">✏ 編集する</button>
           <form id="deleteForm" method="post" style="display:inline;">
             <input type="hidden" name="year"  id="deleteYear">
             <input type="hidden" name="month" id="deleteMonth">
             <button type="submit" class="btn btn-round btn-del-modal"
-                    onclick="return confirm('このよていを削除してもいい？')">🗑 削除する</button>
+                    onclick="return confirm('削除してもいい？')">🗑 削除する</button>
           </form>
         </div>
       </div>
 
-      <!-- 編集モード -->
+      <!-- よてい編集モード -->
       <div id="editMode" style="display:none;">
         <h3 class="modal-section-title">✏ よていを編集する</h3>
         <form id="editForm" method="post" class="form-col">
@@ -120,40 +135,64 @@
 
 <script th:inline="none">
 function openModal(el) {
+  const type  = el.dataset.type;
   const id    = el.dataset.id;
   const title = el.dataset.title;
   const date  = el.dataset.date;
-  const memo  = el.dataset.memo;
   const year  = el.dataset.year;
   const month = el.dataset.month;
 
-  // 表示モードにセット
-  document.getElementById('viewTitle').textContent = title;
-  document.getElementById('viewDate').textContent  = date;
+  document.getElementById('viewEmoji').textContent = (type === 'homework') ? '📝' : '📅';
+  document.getElementById('viewTitle').textContent  = title;
+  document.getElementById('viewDate').textContent   = date;
 
-  const memoBox   = document.getElementById('viewMemoWrap');
-  const noMemo    = document.getElementById('viewNoMemo');
-  if (memo) {
-    document.getElementById('viewMemo').textContent = memo;
-    memoBox.style.display = 'block';
-    noMemo.style.display  = 'none';
+  // メモ（よていのみ）
+  const memo = el.dataset.memo || '';
+  const memoBox = document.getElementById('viewMemoWrap');
+  const noMemo  = document.getElementById('viewNoMemo');
+  if (type === 'schedule') {
+    if (memo) {
+      document.getElementById('viewMemo').textContent = memo;
+      memoBox.style.display = 'block';
+      noMemo.style.display  = 'none';
+    } else {
+      memoBox.style.display = 'none';
+      noMemo.style.display  = 'block';
+    }
   } else {
     memoBox.style.display = 'none';
-    noMemo.style.display  = 'block';
+    noMemo.style.display  = 'none';
   }
 
-  // 削除フォーム
-  document.getElementById('deleteForm').action = '/calendar/delete/' + id;
-  document.getElementById('deleteYear').value  = year;
-  document.getElementById('deleteMonth').value = month;
+  // かだいの完了状態バッジ
+  const doneStatus = document.getElementById('viewDoneStatus');
+  if (type === 'homework') {
+    const done = el.dataset.done === 'true';
+    doneStatus.style.display = 'block';
+    doneStatus.textContent   = done ? '✅ おわった！' : '⬜ まだおわってないよ';
+    doneStatus.className     = 'modal-done-badge ' + (done ? 'done' : 'not-done');
+  } else {
+    doneStatus.style.display = 'none';
+  }
 
-  // 編集フォームにも値をセット
-  document.getElementById('editForm').action   = '/calendar/edit/' + id;
-  document.getElementById('editYear').value    = year;
-  document.getElementById('editMonth').value   = month;
-  document.getElementById('editDate').value    = date;
-  document.getElementById('editTitle').value   = title;
-  document.getElementById('editMemo').value    = memo;
+  // 編集ボタンはよていのみ表示
+  document.getElementById('editBtn').style.display = (type === 'schedule') ? 'inline-block' : 'none';
+
+  // 削除フォーム（よてい or かだいで action を切り替え）
+  const deleteAction = type === 'schedule'
+    ? '/calendar/delete/' + id
+    : '/calendar/delete-homework/' + id;
+  document.getElementById('deleteForm').action      = deleteAction;
+  document.getElementById('deleteYear').value       = year;
+  document.getElementById('deleteMonth').value      = month;
+
+  // よてい編集フォームの初期値
+  document.getElementById('editForm').action  = '/calendar/edit/' + id;
+  document.getElementById('editYear').value   = year;
+  document.getElementById('editMonth').value  = month;
+  document.getElementById('editDate').value   = date;
+  document.getElementById('editTitle').value  = title;
+  document.getElementById('editMemo').value   = memo;
 
   switchToView();
   document.getElementById('scheduleModal').classList.add('open');
