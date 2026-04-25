@@ -56,38 +56,21 @@
         </select>
       </div>
 
-      <!-- ないよう（ラジオで入力方式を切り替え） -->
+      <!-- ないよう -->
       <div class="form-group">
         <span class="label-big">ないよう：</span>
-        <div class="content-mode-toggle">
-          <label class="toggle-label">
-            <input type="radio" name="contentMode" value="select" checked onchange="switchContentMode('select')">
-            えらぶ
-          </label>
-          <label class="toggle-label">
-            <input type="radio" name="contentMode" value="type" onchange="switchContentMode('type')">
-            じぶんで入力
-          </label>
-        </div>
-
-        <!-- えらぶ -->
-        <div id="contentSelectWrap">
-          <select id="contentSelect" class="input-field select-field" onchange="applySelectValue(this)">
-            <option value="">えらんでね</option>
+        <div class="content-both-wrap">
+          <select id="contentSelect" class="input-field select-field">
+            <option value="">えらんでね（なくてもいいよ）</option>
             <option th:each="opt : ${contentOptions}"
                     th:value="${opt.label}"
                     th:text="${opt.label}"></option>
           </select>
-        </div>
-
-        <!-- じぶんで入力 -->
-        <div id="contentTypeWrap" style="display:none;">
           <input type="text" id="contentTypeInput" class="input-field"
-                 placeholder="ないようをじぶんで入力してね" style="width:100%;">
+                 placeholder="じぶんで追加入力（なくてもいいよ）">
         </div>
-
         <!-- 実際に送信される hidden フィールド -->
-        <input type="hidden" th:field="*{content}" id="contentHidden" required>
+        <input type="hidden" th:field="*{content}" id="contentHidden">
       </div>
 
       <!-- 日付 -->
@@ -101,30 +84,16 @@
   </div>
 
   <script th:inline="none">
-  let currentMode = 'select';
-
-function switchContentMode(mode) {
-  currentMode = mode;
-  document.getElementById('contentSelectWrap').style.display = (mode === 'select') ? 'block' : 'none';
-  document.getElementById('contentTypeWrap').style.display   = (mode === 'type')   ? 'block' : 'none';
-  document.getElementById('contentHidden').value = '';
-}
-
-function applySelectValue(select) {
-  document.getElementById('contentHidden').value = select.value;
-}
-
-function prepareContent() {
-  if (currentMode === 'select') {
-    const val = document.getElementById('contentSelect').value;
-    if (!val) { alert('ないようをえらんでね！'); return false; }
-    document.getElementById('contentHidden').value = val;
-  } else {
-    const val = document.getElementById('contentTypeInput').value.trim();
-    if (!val) { alert('ないようを入力してね！'); return false; }
-    document.getElementById('contentHidden').value = val;
-  }
-  return true;
+  function prepareContent() {
+    const sel  = document.getElementById('contentSelect').value.trim();
+    const text = document.getElementById('contentTypeInput').value.trim();
+    if (!sel && !text) {
+      alert('ないようをえらぶか、じぶんで入力してね！');
+      return false;
+    }
+    const combined = [sel, text].filter(v => v).join(' ');
+    document.getElementById('contentHidden').value = combined;
+    return true;
   }
   </script>
 
