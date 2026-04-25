@@ -44,10 +44,8 @@
     <p th:if="${#lists.isEmpty(records)}" class="empty-msg">まだ記録がないよ。タイマーをつかってみよう！</p>
   </div>
 
-</div>
-
-<script th:inline="none">
-let seconds = 0;
+  <script th:inline="none">
+  let seconds = 0;
 let intervalId = null;
 
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -99,7 +97,9 @@ function resetTimer() {
   document.getElementById('startBtn').disabled = false;
   document.getElementById('stopBtn').disabled  = true;
   document.getElementById('resultMsg').style.display = 'none';
-}
-</script>
+  }
+  </script>
+
+</div>
 </body>
 </html>

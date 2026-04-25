@@ -73,38 +73,38 @@
     </div>
   </div>
 
+  <script th:inline="none">
+  function openModal(el) {
+    const id    = el.dataset.id;
+    const title = el.dataset.title;
+    const date  = el.dataset.date;
+    const done  = el.dataset.done === 'true';
+    const year  = el.dataset.year;
+    const month = el.dataset.month;
+
+    document.getElementById('viewTitle').textContent = title;
+    document.getElementById('viewDate').textContent  = date;
+
+    const badge = document.getElementById('viewDoneStatus');
+    badge.textContent = done ? '✅ おわった！' : '⬜ まだおわってないよ';
+    badge.className   = 'modal-done-badge ' + (done ? 'done' : 'not-done');
+
+    document.getElementById('deleteForm').action  = '/calendar/delete-homework/' + id;
+    document.getElementById('deleteYear').value   = year;
+    document.getElementById('deleteMonth').value  = month;
+
+    document.getElementById('scheduleModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('scheduleModal').classList.remove('open');
+  }
+
+  function closeModalOnOverlay(e) {
+    if (e.target.id === 'scheduleModal') closeModal();
+  }
+  </script>
+
 </div>
-
-<script th:inline="none">
-function openModal(el) {
-  const id    = el.dataset.id;
-  const title = el.dataset.title;
-  const date  = el.dataset.date;
-  const done  = el.dataset.done === 'true';
-  const year  = el.dataset.year;
-  const month = el.dataset.month;
-
-  document.getElementById('viewTitle').textContent = title;
-  document.getElementById('viewDate').textContent  = date;
-
-  const badge = document.getElementById('viewDoneStatus');
-  badge.textContent = done ? '✅ おわった！' : '⬜ まだおわってないよ';
-  badge.className   = 'modal-done-badge ' + (done ? 'done' : 'not-done');
-
-  document.getElementById('deleteForm').action  = '/calendar/delete-homework/' + id;
-  document.getElementById('deleteYear').value   = year;
-  document.getElementById('deleteMonth').value  = month;
-
-  document.getElementById('scheduleModal').classList.add('open');
-}
-
-function closeModal() {
-  document.getElementById('scheduleModal').classList.remove('open');
-}
-
-function closeModalOnOverlay(e) {
-  if (e.target.id === 'scheduleModal') closeModal();
-}
-</script>
 </body>
 </html>

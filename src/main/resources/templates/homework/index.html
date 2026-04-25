@@ -100,10 +100,8 @@
     </form>
   </div>
 
-</div>
-
-<script th:inline="none">
-let currentMode = 'select';
+  <script th:inline="none">
+  let currentMode = 'select';
 
 function switchContentMode(mode) {
   currentMode = mode;
@@ -127,7 +125,9 @@ function prepareContent() {
     document.getElementById('contentHidden').value = val;
   }
   return true;
-}
-</script>
+  }
+  </script>
+
+</div>
 </body>
 </html>
