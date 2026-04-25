@@ -32,13 +32,16 @@
            th:classappend="${scheduleMap.containsKey(yearMonth.atDay(day))} ? 'has-event' : ''">
         <span class="cal-day" th:text="${day}"></span>
         <ul class="cal-events" th:if="${scheduleMap.containsKey(yearMonth.atDay(day))}">
-          <li th:each="s : ${scheduleMap.get(yearMonth.atDay(day))}" class="cal-event-item">
+          <li th:each="s : ${scheduleMap.get(yearMonth.atDay(day))}"
+              class="cal-event-item cal-event-clickable"
+              th:data-id="${s.id}"
+              th:data-title="${s.title}"
+              th:data-date="${s.scheduleDate}"
+              th:data-memo="${s.memo != null ? s.memo : ''}"
+              th:data-year="${yearMonth.year}"
+              th:data-month="${yearMonth.monthValue}"
+              onclick="openModal(this)">
             <span th:text="${s.title}"></span>
-            <form th:action="@{/calendar/delete/{id}(id=${s.id})}" method="post" style="display:inline">
-              <input type="hidden" name="year"  th:value="${yearMonth.year}">
-              <input type="hidden" name="month" th:value="${yearMonth.monthValue}">
-              <button type="submit" class="btn-icon-del">✕</button>
-            </form>
           </li>
         </ul>
       </div>
@@ -56,6 +59,123 @@
     </form>
   </div>
 
+  <!-- ===== 詳細モーダル ===== -->
+  <div id="scheduleModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal-box">
+
+      <!-- 閉じるボタン -->
+      <button class="modal-close-btn" onclick="closeModal()">✕</button>
+
+      <!-- 表示モード -->
+      <div id="viewMode">
+        <div class="modal-emoji">📅</div>
+        <h3 class="modal-title" id="viewTitle"></h3>
+        <p class="modal-date"><span id="viewDate"></span></p>
+        <div class="modal-memo-box" id="viewMemoWrap">
+          <p class="modal-memo-label">📝 メモ</p>
+          <p class="modal-memo-text" id="viewMemo"></p>
+        </div>
+        <p id="viewNoMemo" class="modal-no-memo" style="display:none;">メモはないよ</p>
+
+        <div class="modal-actions">
+          <button class="btn btn-round btn-edit-modal" onclick="switchToEdit()">✏ 編集する</button>
+          <form id="deleteForm" method="post" style="display:inline;">
+            <input type="hidden" name="year"  id="deleteYear">
+            <input type="hidden" name="month" id="deleteMonth">
+            <button type="submit" class="btn btn-round btn-del-modal"
+                    onclick="return confirm('このよていを削除してもいい？')">🗑 削除する</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- 編集モード -->
+      <div id="editMode" style="display:none;">
+        <h3 class="modal-section-title">✏ よていを編集する</h3>
+        <form id="editForm" method="post" class="form-col">
+          <input type="hidden" name="year"  id="editYear">
+          <input type="hidden" name="month" id="editMonth">
+          <div class="form-row">
+            <label class="label-big">日付：</label>
+            <input type="date" name="scheduleDate" id="editDate" class="input-field" required>
+          </div>
+          <div class="form-row">
+            <label class="label-big">タイトル：</label>
+            <input type="text" name="title" id="editTitle" class="input-field" required style="flex:1;">
+          </div>
+          <div class="form-row">
+            <label class="label-big">メモ：</label>
+            <input type="text" name="memo" id="editMemo" class="input-field" placeholder="なくてもいいよ" style="flex:1;">
+          </div>
+          <div class="modal-actions">
+            <button type="submit" class="btn btn-round btn-add">💾 保存する</button>
+            <button type="button" class="btn btn-round btn-cancel-modal" onclick="switchToView()">キャンセル</button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
 </div>
+
+<script th:inline="none">
+function openModal(el) {
+  const id    = el.dataset.id;
+  const title = el.dataset.title;
+  const date  = el.dataset.date;
+  const memo  = el.dataset.memo;
+  const year  = el.dataset.year;
+  const month = el.dataset.month;
+
+  // 表示モードにセット
+  document.getElementById('viewTitle').textContent = title;
+  document.getElementById('viewDate').textContent  = date;
+
+  const memoBox   = document.getElementById('viewMemoWrap');
+  const noMemo    = document.getElementById('viewNoMemo');
+  if (memo) {
+    document.getElementById('viewMemo').textContent = memo;
+    memoBox.style.display = 'block';
+    noMemo.style.display  = 'none';
+  } else {
+    memoBox.style.display = 'none';
+    noMemo.style.display  = 'block';
+  }
+
+  // 削除フォーム
+  document.getElementById('deleteForm').action = '/calendar/delete/' + id;
+  document.getElementById('deleteYear').value  = year;
+  document.getElementById('deleteMonth').value = month;
+
+  // 編集フォームにも値をセット
+  document.getElementById('editForm').action   = '/calendar/edit/' + id;
+  document.getElementById('editYear').value    = year;
+  document.getElementById('editMonth').value   = month;
+  document.getElementById('editDate').value    = date;
+  document.getElementById('editTitle').value   = title;
+  document.getElementById('editMemo').value    = memo;
+
+  switchToView();
+  document.getElementById('scheduleModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('scheduleModal').classList.remove('open');
+}
+
+function closeModalOnOverlay(e) {
+  if (e.target.id === 'scheduleModal') closeModal();
+}
+
+function switchToEdit() {
+  document.getElementById('viewMode').style.display = 'none';
+  document.getElementById('editMode').style.display = 'block';
+}
+
+function switchToView() {
+  document.getElementById('viewMode').style.display = 'block';
+  document.getElementById('editMode').style.display = 'none';
+}
+</script>
 </body>
 </html>

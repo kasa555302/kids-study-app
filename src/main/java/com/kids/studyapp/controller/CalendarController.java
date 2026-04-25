@@ -42,6 +42,14 @@ public class CalendarController {
         return "redirect:/calendar?year=" + ym.getYear() + "&month=" + ym.getMonthValue();
     }
 
+    @PostMapping("/edit/{id}")
+    public String edit(@PathVariable Long id,
+                       @ModelAttribute Schedule form,
+                       @RequestParam int year, @RequestParam int month) {
+        calendarService.update(id, form);
+        return "redirect:/calendar?year=" + year + "&month=" + month;
+    }
+
     @PostMapping("/delete/{id}")
     public String delete(@PathVariable Long id,
                          @RequestParam int year, @RequestParam int month) {

@@ -32,6 +32,15 @@ public class CalendarService {
         scheduleRepository.save(schedule);
     }
 
+    public void update(Long id, Schedule form) {
+        scheduleRepository.findById(id).ifPresent(s -> {
+            s.setScheduleDate(form.getScheduleDate());
+            s.setTitle(form.getTitle());
+            s.setMemo(form.getMemo());
+            scheduleRepository.save(s);
+        });
+    }
+
     public void delete(Long id) {
         scheduleRepository.deleteById(id);
     }
