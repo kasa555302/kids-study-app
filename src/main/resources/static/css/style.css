@@ -306,7 +306,17 @@ body {
 .empty-msg { text-align: center; color: #aaa; padding: 1.5rem; }
 
 /* かだいバッジ（カレンダーセル内） */
-.cal-event-homework { background: var(--green); }
+.cal-event-homework { background: var(--green); color: #fff; }
+
+/* 完了したかだい：グレー背景＋打ち消し線 */
+.cal-event-done {
+  background: #bdbdbd !important;
+  color: #fff;
+}
+.cal-event-text-done {
+  text-decoration: line-through;
+  opacity: .85;
+}
 
 /* モーダル完了バッジ */
 .modal-done-badge {

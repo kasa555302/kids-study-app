@@ -1,6 +1,7 @@
 package com.kids.studyapp.controller;
 
 import com.kids.studyapp.entity.Homework;
+import com.kids.studyapp.repository.ContentOptionRepository;
 import com.kids.studyapp.repository.HomeworkRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,9 +18,12 @@ import java.util.stream.Collectors;
 public class CalendarController {
 
     private final HomeworkRepository homeworkRepository;
+    private final ContentOptionRepository contentOptionRepository;
 
-    public CalendarController(HomeworkRepository homeworkRepository) {
-        this.homeworkRepository = homeworkRepository;
+    public CalendarController(HomeworkRepository homeworkRepository,
+                              ContentOptionRepository contentOptionRepository) {
+        this.homeworkRepository      = homeworkRepository;
+        this.contentOptionRepository = contentOptionRepository;
     }
 
     @GetMapping
@@ -38,7 +42,35 @@ public class CalendarController {
 
         model.addAttribute("yearMonth", ym);
         model.addAttribute("homeworkMap", homeworkMap);
+        model.addAttribute("contentOptions", contentOptionRepository.findAllByOrderByIdAsc());
         return "calendar/index";
+    }
+
+    /** 完了・未完了を切り替える */
+    @PostMapping("/toggle-homework/{id}")
+    public String toggleHomework(@PathVariable Long id,
+                                 @RequestParam int year, @RequestParam int month) {
+        homeworkRepository.findById(id).ifPresent(hw -> {
+            hw.setDone(!hw.isDone());
+            homeworkRepository.save(hw);
+        });
+        return "redirect:/calendar?year=" + year + "&month=" + month;
+    }
+
+    /** かもく・ないよう・日付を編集する */
+    @PostMapping("/edit-homework/{id}")
+    public String editHomework(@PathVariable Long id,
+                               @RequestParam String subject,
+                               @RequestParam String content,
+                               @RequestParam LocalDate dueDate,
+                               @RequestParam int year, @RequestParam int month) {
+        homeworkRepository.findById(id).ifPresent(hw -> {
+            hw.setSubject(subject);
+            hw.setContent(content);
+            hw.setDueDate(dueDate);
+            homeworkRepository.save(hw);
+        });
+        return "redirect:/calendar?year=" + year + "&month=" + month;
     }
 
     /** カレンダー画面からかだいを削除する */

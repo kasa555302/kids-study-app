@@ -21,29 +21,29 @@
   <div class="calendar-grid">
     <div class="cal-header" th:each="d : ${ {'日','月','火','水','木','金','土'} }" th:text="${d}"></div>
 
-    <!-- 月初の空白 -->
     <div class="cal-empty"
          th:each="i : ${#numbers.sequence(1, yearMonth.atDay(1).dayOfWeek.value == 7 ? 0 : yearMonth.atDay(1).dayOfWeek.value)}">
     </div>
 
-    <!-- 日付セル -->
     <th:block th:each="day : ${#numbers.sequence(1, yearMonth.lengthOfMonth())}">
       <div class="cal-cell"
            th:classappend="${homeworkMap.containsKey(yearMonth.atDay(day))} ? 'has-event' : ''">
         <span class="cal-day" th:text="${day}"></span>
 
-        <!-- かだい -->
         <ul class="cal-events" th:if="${homeworkMap.containsKey(yearMonth.atDay(day))}">
           <li th:each="hw : ${homeworkMap.get(yearMonth.atDay(day))}"
               class="cal-event-item cal-event-homework cal-event-clickable"
+              th:classappend="${hw.done} ? ' cal-event-done' : ''"
               th:data-id="${hw.id}"
-              th:data-title="${hw.subject + '：' + hw.content}"
+              th:data-subject="${hw.subject}"
+              th:data-content="${hw.content}"
               th:data-date="${hw.dueDate}"
               th:data-done="${hw.done}"
               th:data-year="${yearMonth.year}"
               th:data-month="${yearMonth.monthValue}"
               onclick="openModal(this)">
-            <span th:text="${hw.subject + '：' + hw.content}"></span>
+            <span th:text="${hw.subject + '：' + hw.content}"
+                  th:classappend="${hw.done} ? 'cal-event-text-done' : ''"></span>
           </li>
         </ul>
       </div>
@@ -51,22 +51,82 @@
   </div>
 
   <!-- ===== かだい詳細モーダル ===== -->
-  <div id="scheduleModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+  <div id="hwModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
     <div class="modal-box">
-
       <button class="modal-close-btn" onclick="closeModal()">✕</button>
 
-      <div class="modal-emoji">📝</div>
-      <h3 class="modal-title" id="viewTitle"></h3>
-      <p class="modal-date"><span id="viewDate"></span></p>
-      <div id="viewDoneStatus" class="modal-done-badge"></div>
+      <!-- 表示モード -->
+      <div id="viewMode">
+        <div class="modal-emoji">📝</div>
+        <h3 class="modal-title" id="viewTitle"></h3>
+        <p class="modal-date" id="viewDate"></p>
+        <div id="viewDoneStatus" class="modal-done-badge"></div>
 
-      <div class="modal-actions">
-        <form id="deleteForm" method="post">
-          <input type="hidden" name="year"  id="deleteYear">
-          <input type="hidden" name="month" id="deleteMonth">
-          <button type="submit" class="btn btn-round btn-del-modal"
-                  onclick="return confirm('このかだいをカレンダーから削除してもいい？')">🗑 削除する</button>
+        <div class="modal-actions">
+          <!-- 完了切り替えフォーム -->
+          <form id="toggleForm" method="post" style="display:inline;">
+            <input type="hidden" name="year"  id="toggleYear">
+            <input type="hidden" name="month" id="toggleMonth">
+            <button type="submit" id="toggleBtn" class="btn btn-round btn-toggle-done"></button>
+          </form>
+          <!-- 編集ボタン -->
+          <button class="btn btn-round btn-edit-modal" onclick="switchToEdit()">✏ 編集する</button>
+          <!-- 削除フォーム -->
+          <form id="deleteForm" method="post" style="display:inline;">
+            <input type="hidden" name="year"  id="deleteYear">
+            <input type="hidden" name="month" id="deleteMonth">
+            <button type="submit" class="btn btn-round btn-del-modal"
+                    onclick="return confirm('このかだいを削除してもいい？')">🗑 削除</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- 編集モード -->
+      <div id="editMode" style="display:none;">
+        <h3 class="modal-section-title">✏ かだいを編集する</h3>
+        <form id="editForm" method="post" class="form-col">
+          <input type="hidden" name="year"  id="editYear">
+          <input type="hidden" name="month" id="editMonth">
+
+          <div class="form-row">
+            <label class="label-big">かもく：</label>
+            <select name="subject" id="editSubject" class="input-field select-field" required>
+              <option value="こくご">こくご</option>
+              <option value="さんすう">さんすう</option>
+              <option value="りか">りか</option>
+              <option value="しゃかい">しゃかい</option>
+              <option value="えいご">えいご</option>
+              <option value="作文（にっき）">作文（にっき）</option>
+              <option value="漢字">漢字</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <span class="label-big">ないよう：</span>
+            <div class="content-both-wrap">
+              <select id="editContentSelect" class="input-field select-field">
+                <option value="">えらんでね（なくてもいいよ）</option>
+                <option th:each="opt : ${contentOptions}"
+                        th:value="${opt.label}"
+                        th:text="${opt.label}"></option>
+              </select>
+              <input type="text" id="editContentText" class="input-field"
+                     placeholder="じぶんで追加入力（なくてもいいよ）">
+            </div>
+            <input type="hidden" name="content" id="editContentHidden">
+          </div>
+
+          <div class="form-row">
+            <label class="label-big">日付：</label>
+            <input type="date" name="dueDate" id="editDueDate" class="input-field" required>
+          </div>
+
+          <div class="modal-actions">
+            <button type="submit" class="btn btn-round btn-add"
+                    onclick="return prepareEditContent()">💾 保存する</button>
+            <button type="button" class="btn btn-round btn-cancel-modal"
+                    onclick="switchToView()">キャンセル</button>
+          </div>
         </form>
       </div>
 
@@ -75,33 +135,83 @@
 
   <script th:inline="none">
   function openModal(el) {
-    const id    = el.dataset.id;
-    const title = el.dataset.title;
-    const date  = el.dataset.date;
-    const done  = el.dataset.done === 'true';
-    const year  = el.dataset.year;
-    const month = el.dataset.month;
+    const id      = el.dataset.id;
+    const subject = el.dataset.subject;
+    const content = el.dataset.content;
+    const date    = el.dataset.date;
+    const done    = el.dataset.done === 'true';
+    const year    = el.dataset.year;
+    const month   = el.dataset.month;
 
-    document.getElementById('viewTitle').textContent = title;
+    // 表示モードにセット
+    document.getElementById('viewTitle').textContent = subject + '：' + content;
     document.getElementById('viewDate').textContent  = date;
 
     const badge = document.getElementById('viewDoneStatus');
     badge.textContent = done ? '✅ おわった！' : '⬜ まだおわってないよ';
     badge.className   = 'modal-done-badge ' + (done ? 'done' : 'not-done');
 
+    // 完了切り替えボタン
+    document.getElementById('toggleForm').action = '/calendar/toggle-homework/' + id;
+    document.getElementById('toggleYear').value  = year;
+    document.getElementById('toggleMonth').value = month;
+    const toggleBtn = document.getElementById('toggleBtn');
+    toggleBtn.textContent = done ? '↩ 未完了にもどす' : '✅ 完了にする';
+    toggleBtn.className   = 'btn btn-round ' + (done ? 'btn-undo-done' : 'btn-toggle-done');
+
+    // 削除フォーム
     document.getElementById('deleteForm').action  = '/calendar/delete-homework/' + id;
     document.getElementById('deleteYear').value   = year;
     document.getElementById('deleteMonth').value  = month;
 
-    document.getElementById('scheduleModal').classList.add('open');
+    // 編集フォームにも値をセット
+    document.getElementById('editForm').action    = '/calendar/edit-homework/' + id;
+    document.getElementById('editYear').value     = year;
+    document.getElementById('editMonth').value    = month;
+    document.getElementById('editDueDate').value  = date;
+    document.getElementById('editContentText').value  = '';
+    document.getElementById('editContentHidden').value = content;
+
+    // かもくを選択状態に
+    const subjectSel = document.getElementById('editSubject');
+    for (let opt of subjectSel.options) {
+      opt.selected = (opt.value === subject);
+    }
+    // ないようをテキスト欄に初期表示
+    document.getElementById('editContentText').value = content;
+    document.getElementById('editContentSelect').value = '';
+
+    switchToView();
+    document.getElementById('hwModal').classList.add('open');
+  }
+
+  function prepareEditContent() {
+    const sel  = document.getElementById('editContentSelect').value.trim();
+    const text = document.getElementById('editContentText').value.trim();
+    if (!sel && !text) {
+      alert('ないようをえらぶか、じぶんで入力してね！');
+      return false;
+    }
+    document.getElementById('editContentHidden').value = [sel, text].filter(v => v).join(' ');
+    return true;
   }
 
   function closeModal() {
-    document.getElementById('scheduleModal').classList.remove('open');
+    document.getElementById('hwModal').classList.remove('open');
   }
 
   function closeModalOnOverlay(e) {
-    if (e.target.id === 'scheduleModal') closeModal();
+    if (e.target.id === 'hwModal') closeModal();
+  }
+
+  function switchToEdit() {
+    document.getElementById('viewMode').style.display = 'none';
+    document.getElementById('editMode').style.display = 'block';
+  }
+
+  function switchToView() {
+    document.getElementById('viewMode').style.display = 'block';
+    document.getElementById('editMode').style.display = 'none';
   }
   </script>
 
